@@ -7,7 +7,7 @@ An intelligent, AI-powered research assistant for materials science discovery. B
 - 🤖 **ReAct Agent Architecture**: Autonomous reasoning and action loop powered by LangGraph
 - 🔬 **Multi-Database Integration**: Materials Project, PubChem, SureChEMBL, and Web Search
 - 💬 **Conversational Interface**: Natural language queries with clarification capabilities
-- 🧠 **Long-term Memory**: Persistent conversation history and user preferences
+- 🧠 **Smart Memory Management**: Two-tier memory system with automatic session cleanup
 - 🎨 **Modern UI**: React + Tailwind CSS with markdown-formatted responses
 - 🖼️ **Multimodal Support**: Chemical structure visualization with image generation
 - 📊 **Observability**: Integrated Langfuse tracing for debugging and monitoring
@@ -43,9 +43,23 @@ The agent autonomously:
 
 ### 🧠 Memory & State Management
 
-- **Short-term Memory**: SQLite-based conversation checkpoints via `AsyncSqliteSaver`
-- **Long-term Memory**: User-specific facts and preferences via `AsyncSqliteStore`
-- **Session Persistence**: Conversations resume across page refreshes
+The agent uses a **two-tier memory system** with automatic cleanup:
+
+- **Short-term Memory** (`InMemorySaver`): Stores conversation history per session in RAM
+  - Fast access for active conversations
+  - Automatically cleaned up when sessions become inactive
+  - Lost on server restart (by design for development)
+
+- **Long-term Memory** (`AsyncSqliteStore`): User-specific facts and preferences persisted to SQLite
+  - Survives server restarts
+  - Stores user preferences, industry context, and search history
+  - Persisted in `backend/long_term_memory.db`
+
+- **Session Cleanup**: Automatic memory management
+  - Removes orphaned sessions when users refresh/create new sessions
+  - Cleans up inactive sessions after configurable timeout (default: 30 minutes)
+  - Prevents RAM bloat from accumulated conversations
+  - Configurable via `SESSION_CLEANUP_INACTIVE_MINUTES` and `SESSION_CLEANUP_ON_NEW_SESSION`
 
 ## 🚀 Quick Start
 
@@ -148,10 +162,18 @@ BACKEND_PORT=8000                    # Backend API port
 FRONTEND_PORT=5000                   # Frontend dev server port
 ```
 
+### Session Management
+```bash
+SESSION_CLEANUP_INACTIVE_MINUTES=30  # Clean up sessions inactive for 30+ minutes
+SESSION_CLEANUP_ON_NEW_SESSION=true   # Auto-cleanup when new session created
+```
+
+**Manual Cleanup**: Trigger cleanup via `POST /api/cleanup-sessions` endpoint (useful for scheduled tasks or memory monitoring).
+
 ### Database Files
 - `backend/long_term_memory.db` - User preferences and facts (long-term memory)
 
-**Note:** Database files are automatically created on first run and are gitignored.
+**Note:** Database files are automatically created on first run and are gitignored. Session cleanup prevents RAM bloat from orphaned conversations.
 
 ## 📊 Observability with Langfuse
 
@@ -219,7 +241,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: Open an issue on GitHub for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions and ideas
-- **Email**: [your-email@example.com]
+- **Email**: [akinpeluakorede01@gmail.com]
 
 ---
 

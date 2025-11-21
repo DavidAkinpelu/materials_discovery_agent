@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import uvicorn
-from agents.graph import run_agent, get_agent
+from agents.graph import run_agent, get_agent, cleanup_old_sessions, get_checkpointer
 from models.schemas import ChatRequest, ChatResponse
 import uuid
 import os
@@ -46,18 +46,18 @@ async def root():
 async def chat(request: ChatRequest):
     """Main chat endpoint"""
     try:
+        is_new_session = request.session_id is None
         session_id = request.session_id or str(uuid.uuid4())
-        logger.info(f"Received chat request - Session: {session_id[:8]}... Query: {request.message[:100]}...")
+        logger.info(f"Received chat request")
         
-        # Run agent (state is managed by LangGraph checkpointer)
         logger.info(f"Starting agent execution...")
         result = await run_agent(
             user_query=request.message,
-            session_id=session_id
+            session_id=session_id,
+            is_new_session=is_new_session
         )
         
-        logger.info(f"Agent completed successfully - Response length: {len(result.get('final_response', ''))} chars")
-        logger.info('final_response: ' + result['final_response'])
+        logger.info(f"Agent completed successfully")
         
         return ChatResponse(
             response=result['final_response'],
@@ -86,26 +86,23 @@ async def get_history(session_id: str):
             
         history = state_snapshot.values.get("conversation_history", [])
         
-        # Format for frontend if necessary (frontend expects query/response/timestamp)
-        # Our node saves it exactly in that format.
-        
-        # Sort by timestamp desc (newest first) as per previous implementation
-        # But node appends, so list is old -> new.
-        # Frontend expects:
-        # "for c in reversed(convs)" -> implies it returns newest first?
-        # Previous implementation: order_by(desc).all() -> newest first.
-        # But then `for c in reversed(convs)` -> makes it oldest first?
-        # Let's check the frontend code to be sure.
-        # Frontend just maps it.
-        # Let's return it as is (oldest -> newest) and let frontend handle display, 
-        # OR match the previous behavior.
-        # Previous behavior: `return [ ... for c in reversed(convs) ]` where convs was DESC (newest first).
-        # So `reversed(convs)` made it ASC (oldest first).
-        # Our list is already ASC. So we just return it.
-        
         return {"history": history}
         
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/cleanup-sessions")
+async def cleanup_sessions():
+    """Manually trigger cleanup of old/inactive sessions from memory"""
+    try:
+        checkpointer = get_checkpointer()
+        if not checkpointer:
+            return {"message": "No checkpointer available", "cleaned": 0}
+        
+        await cleanup_old_sessions(checkpointer, is_new_session=False)
+        return {"message": "Cleanup completed", "status": "success"}
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

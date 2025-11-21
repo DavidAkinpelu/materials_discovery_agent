@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     CACHE_TTL_MP_STATS: int = 2592000         # 30 days
     CACHE_TTL_PATENTS: int = 86400            # 24 hours
     CACHE_TTL_STRUCTURES: int = 604800        # 7 days
+    
+    # Session Management
+    SESSION_CLEANUP_INACTIVE_MINUTES: int = 30  # Clean up sessions inactive for 30+ minutes
+    SESSION_CLEANUP_ON_NEW_SESSION: bool = True  # Clean up old sessions when new one created
 
     class Config:
         env_file = ".env"
