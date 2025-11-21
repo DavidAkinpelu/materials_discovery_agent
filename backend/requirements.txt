@@ -1,0 +1,14 @@
+langchain>=0.1.0
+langchain-openai
+langgraph
+langgraph-checkpoint-sqlite
+fastapi
+uvicorn[standard]
+mp-api
+httpx
+pydantic
+python-dotenv
+cachetools
+sqlalchemy
+exa-py
+langfuse
