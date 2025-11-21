@@ -63,7 +63,7 @@ The agent autonomously:
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/DavidAkinpelu/materials_discovery_agent.git
 cd materials_discovery_agent
 ```
 
@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **PubChem** (NCBI) for chemical compound data
 - **SureChEMBL** (EMBL-EBI) for patent chemistry data
 - **LangChain/LangGraph** for the agent framework
-- **OpenAI** for GPT-4o
+- **OpenAI** for the llm
 - **Exa.ai** for semantic web search
 
 ## 📧 Contact & Support
@@ -223,4 +223,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ for materials scientists, chemists, and researchers**
+**Built for materials scientists, chemists, and researchers**
